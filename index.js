@@ -77,23 +77,21 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/users", async (req, res) => {
-      const userInfo = req.body;
-      const filter = { email: userInfo.email };
-      const updateDoc = {
-        $set: {
-          email: userInfo.email,
-          role: userInfo.role || "user",
-        },
-      };
-      const options = { upsert: true };
-      const result = await usersCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
-      res.send(result);
-    });
+app.post("/users", async (req, res) => {
+  const userInfo = req.body;
+  const existingUser = await usersCollection.findOne({ email: userInfo.email });
+
+  if (existingUser) {
+    return res.send({ message: "User already exists", inserted: false });
+  }
+
+  const result = await usersCollection.insertOne({
+    email: userInfo.email,
+    role: "user", // default role
+  });
+  res.send(result);
+});
+
 
 // Update user profile by email
 app.patch("/users/:email", async (req, res) => {
