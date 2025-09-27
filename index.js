@@ -72,10 +72,15 @@ async function run() {
 
     // Admin Api ************************************* Admin Api
     app.post("/newsletter", async (req, res) => {
-      const data = req.body;
-      const result = await newsletterCollection.insertOne(data);
+      const subscribingData = req.body;
+      const result = await newsletterCollection.insertOne(subscribingData);
       res.send(result);
     });
+
+    app.get("/newsletter", async(req, res) =>{
+      const result = await newsletterCollection.find().toArray()
+      res.send(result)
+    })
 
 app.post("/users", async (req, res) => {
   const userInfo = req.body;
@@ -139,6 +144,14 @@ app.patch("/users/:email", async (req, res) => {
         res.status(500).send({ message: "server error" });
       }
     });
+
+    app.delete('/trainers/:id', async(req, res)=>{
+const id = req.params.id
+const result = await trainerCollection.deleteOne({_id: new ObjectId(id)})
+res.send({deleted: result.deletedCount})    
+})
+
+
     // Admin Api *************************************** Admin Api
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
