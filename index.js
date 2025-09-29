@@ -34,6 +34,7 @@ async function run() {
     const classesCollection = database.collection("allClasses");
     const newsletterCollection = database.collection("newsletter");
     const usersCollection = database.collection("usersCollection");
+    const trainerAppplicationCollection = database.collection("trainerApplication");
     // General Apis ................................... General Apis
 
     app.get("/trainers", async (req, res) => {
@@ -77,59 +78,61 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/newsletter", async(req, res) =>{
-      const result = await newsletterCollection.find().toArray()
-      res.send(result)
-    })
+    app.get("/newsletter", async (req, res) => {
+      const result = await newsletterCollection.find().toArray();
+      res.send(result);
+    });
 
-app.post("/users", async (req, res) => {
-  const userInfo = req.body;
-  const existingUser = await usersCollection.findOne({ email: userInfo.email });
+    app.post("/users", async (req, res) => {
+      const userInfo = req.body;
+      const existingUser = await usersCollection.findOne({
+        email: userInfo.email,
+      });
 
-  if (existingUser) {
-    return res.send({ message: "User already exists", inserted: false });
-  }
+      if (existingUser) {
+        return res.send({ message: "User already exists", inserted: false });
+      }
 
-  const result = await usersCollection.insertOne({
-    email: userInfo.email,
-    role: "user", // default role
-  });
-  res.send(result);
-});
+      const result = await usersCollection.insertOne({
+        email: userInfo.email,
+        role: "user", // default role
+      });
+      res.send(result);
+    });
 
+    // Update user profile by email
+    app.patch("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const { name, image } = req.body;
 
-// Update user profile by email
-app.patch("/users/:email", async (req, res) => {
-  const email = req.params.email;
-  const { name, image } = req.body;
+      try {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: {
+            name: name,
+            image: image,
+          },
+        };
 
-  try {
-    const filter = { email: email };
-    const updateDoc = {
-      $set: {
-        name: name,
-        image: image,
-      },
-    };
+        const result = await usersCollection.updateOne(filter, updateDoc);
 
-    const result = await usersCollection.updateOne(filter, updateDoc);
+        if (result.modifiedCount === 0) {
+          return res
+            .status(404)
+            .send({ message: "User not found or no changes" });
+        }
 
-    if (result.modifiedCount === 0) {
-      return res.status(404).send({ message: "User not found or no changes" });
-    }
+        res.send({ message: "User updated successfully", result });
+      } catch (error) {
+        console.error("Error updating user:", error);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
 
-    res.send({ message: "User updated successfully", result });
-  } catch (error) {
-    console.error("Error updating user:", error);
-    res.status(500).send({ message: "Server error" });
-  }
-});
-
-
-    app.get('/users', async(req, res)=>{
-      const result = await usersCollection.find().toArray()
-      res.send(result)
-    })
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
 
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
@@ -138,19 +141,26 @@ app.patch("/users/:email", async (req, res) => {
         if (!user) {
           res.status(404).send({ message: "user not found" });
         }
-        res.send(user)
+        res.send(user);
       } catch (error) {
         console.log("error in fetching user by email:", error);
         res.status(500).send({ message: "server error" });
       }
     });
 
-    app.delete('/trainers/:id', async(req, res)=>{
-const id = req.params.id
-const result = await trainerCollection.deleteOne({_id: new ObjectId(id)})
-res.send({deleted: result.deletedCount})    
-})
+    app.delete("/trainers/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await trainerCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      res.send({ deleted: result.deletedCount });
+    });
 
+    app.post('/trainer-application', async(req, res)=>{
+      const applicationData = req.body
+      const result = await trainerAppplicationCollection.insertOne(applicationData)
+      res.send(result)
+    })
 
     // Admin Api *************************************** Admin Api
     // Send a ping to confirm a successful connection
