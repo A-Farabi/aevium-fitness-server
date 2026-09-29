@@ -13,7 +13,9 @@ app.use(
 app.use(express.json());
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mrtaf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mrtaf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
+const uri = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-shard-00-00.mrtaf.mongodb.net:27017,cluster0-shard-00-01.mrtaf.mongodb.net:27017,cluster0-shard-00-02.mrtaf.mongodb.net:27017/?ssl=true&replicaSet=atlas-9cw75a-shard-0&authSource=admin&appName=Cluster0`
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -161,6 +163,47 @@ async function run() {
       const result = await trainerAppplicationCollection.insertOne(applicationData)
       res.send(result)
     })
+
+    app.get('/trainer-application', async(req, res) =>{
+      const result = await trainerAppplicationCollection.find().toArray()
+      res.send(result)
+    })
+
+    // ...................... +++++
+
+// Get single application
+app.get('/trainer-application/:id', async (req, res) => {
+  const { id } = req.params;
+  const app = await trainerAppplicationCollection.findOne({ _id: new ObjectId(id) });
+  res.send(app);
+});
+
+// Approve: Add to trainers + update user role
+app.post('/trainers', async (req, res) => {
+  const trainerData = req.body;
+  const result = await trainersCollection.insertOne(trainerData);
+  res.send(result);
+});
+
+// Update user role to 'trainer'
+app.patch('/users/:email', async (req, res) => {
+  const { email } = req.params;
+  const { role } = req.body;
+  const result = await usersCollection.updateOne(
+    { email },
+    { $set: { role } }
+  );
+  res.send(result);
+});
+
+// Delete from applications (after approve/reject)
+app.delete('/trainer-application/:id', async (req, res) => {
+  const { id } = req.params;
+  const result = await trainerAppplicationCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
+
+    // ...................... +++++
 
     // Admin Api *************************************** Admin Api
     // Send a ping to confirm a successful connection
