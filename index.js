@@ -203,6 +203,13 @@ app.delete('/trainer-application/:id', async (req, res) => {
   res.send(result);
 });
 
+//add new class by the admin
+app.post('/all-classes', async(req, res)=>{
+  const classData = req.body;
+  const result = await classesCollection.insertOne(classData);
+  res.send(result)
+})
+
     // ...................... +++++
 
     // Admin Api *************************************** Admin Api
